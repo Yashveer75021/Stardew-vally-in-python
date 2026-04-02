@@ -1,0 +1,33 @@
+#all the image files
+*.png
+*.jpg
+*.jpeg
+
+#all the sound files
+*.mp3
+*.wav
+
+#all the video files
+*.mp4
+*.avi
+
+#all the font files
+*.ttf
+*.otf
+
+#map files 
+*.tmx
+*.tsx
+
+#all the compiled python files
+*.pyc
+*.pyo
+
+#all the log files
+*.log
+
+#all the temporary files
+*.tmp
+
+#all the tileset files
+*.tsx

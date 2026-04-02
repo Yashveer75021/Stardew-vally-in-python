@@ -1,11 +1,15 @@
 import pygame, sys 
 from setting import *
+from level import Level
 
 class Game:
-    def __int__(self):
+    def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT  ))
+        pygame.display.set_caption('Yashveer valley')
         self.clock = pygame.time.Clock()
+        self.level = Level()
+
     def run(self):
         while True:
             for event in pygame.event.get():
@@ -13,6 +17,7 @@ class Game:
                     pygame.quit()
                     sys.exit()
             dt = self.clock.tick(60) / 1000
+            self.level.run(dt)
             pygame.display.update()
 
 
