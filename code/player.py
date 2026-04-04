@@ -4,7 +4,7 @@ from support import *
 from my_timer import Timer
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups):
+    def __init__(self, pos, groups, collision_sprites, tree_stripes):
         super().__init__(groups)
         
         self.import_assets()
@@ -14,11 +14,16 @@ class Player(pygame.sprite.Sprite):
         #generel setup
         self.image = self.animation[self.status][self.frame_index]
         self.rect = self.image.get_rect(center = pos)
+        self.z = LAYERS['main']
 
         #movement attributes
         self.direction = pygame.math.Vector2()
         self.pos = pygame.math.Vector2(self.rect.center)
         self.speed = 200
+
+        #collision
+        self.hitbox = self.rect.copy().inflate((-self.rect.width * 0.8, -self.rect.height * 0.6))
+        self.collision_sprites = collision_sprites
 
         #timers
         self.timers = {
@@ -38,16 +43,27 @@ class Player(pygame.sprite.Sprite):
         self.seed_index = 0
         self.selected_seed = self.seeds[self.seed_index]
 
+        #intrasction
+        self.tree_stripes = tree_stripes
+
+    def target_pos(self):
+        self.get_target_pos = self.rect.center + PLAYER_TOOL_OFFEST[self.status.split('_')[0]]
     
     def seed_use(self):
         #self.timers['seed use'].activate()
-        print(self.selected_seed)
+        pass
     
     def tool_use(self):
         #self.timers['tool use'].activate()
-        print(self.selected_tool)
-
-
+        if self.selected_tool == 'axe':
+            pass
+        if self.selected_tool == 'axe':
+            for tree in self.tree_stripes():
+                if tree.rect.colliderect(self.hitbox):
+                    tree.kill()
+        if self.selected_tool == 'axe':
+            pass
+            
 
     def import_assets(self):
         self.animation = {
@@ -96,7 +112,7 @@ class Player(pygame.sprite.Sprite):
                 self.frame_index = 0
 
             #tools switch
-            if keys[pygame.K_1] and not self.timers['tool_switch'].active:
+            if keys[pygame.K_q] and not self.timers['tool_switch'].active:
                 self.timers['tool_switch'].activate()
                 self.tool_index += 1
                 self.tool_index = self.tool_index if self.tool_index < len(self.tools) else 0
@@ -109,18 +125,36 @@ class Player(pygame.sprite.Sprite):
                 self.frame_index = 0
 
             #seed switch
-            if keys[pygame.K_2] and not self.timers['tool_switch'].active:
-                self.timers['tool_switch'].activate()
+            if keys[pygame.K_e] and not self.timers['seed_switch'].active:
+                self.timers['seed_switch'].activate()
                 self.seed_index += 1
                 self.seed_index = self.seed_index if self.seed_index < len(self.seeds) else 0
-                self.selected_seed = self.seeds[self.seed_index]
+                self.selected_seed = self.seeds[self.seed_index]    
             
-
-
 
     def update_timers(self):
         for ti in self.timers.values():
             ti.update()
+
+    def collision(self, direction):
+        for sprite in self.collision_sprites:
+            if hasattr(sprite, 'hitbox'):
+                if sprite.hitbox.colliderect(self.hitbox):
+                    if direction == 'horizontal':
+                        if self.direction.x > 0: #moving right
+                            self.hitbox.right = sprite.hitbox.left
+                        if self.direction.x < 0: #moving left
+                            self.hitbox.left = sprite.hitbox.right
+                        self.rect.centerx = self.hitbox.centerx
+                        self.pos.x = self.hitbox.centerx
+
+                    if direction == 'vertical':
+                        if self.direction.y > 0: #moving down
+                            self.hitbox.bottom = sprite.hitbox.top
+                        if self.direction.y < 0: #moving up
+                            self.hitbox.top = sprite.hitbox.bottom
+                        self.rect.centery = self.hitbox.centery
+                        self.pos.y = self.hitbox.centery
 
     def status_update(self):
         #movement status
@@ -137,17 +171,22 @@ class Player(pygame.sprite.Sprite):
 
         #horizontal movement
         self.pos.x += self.direction.x * self.speed * dt
-        self.rect.centerx = round(self.pos.x)
+        self.hitbox.centerx = round(self.pos.x)
+        self.rect.centerx = self.hitbox.centerx
+        self.collision('horizontal')
         
         
         #vertical movement    
-        self.pos.y += self.direction.y * self.speed * dt    
-        self.rect.centery = round(self.pos.y)
+        self.pos.y += self.direction.y * self.speed * dt   
+        self.hitbox.centery = round(self.pos.y) 
+        self.rect.centery = self.hitbox.centery
+        self.collision('vertical')
 
     def update(self, dt):
         self.input()
         self.update_timers()
         self.status_update()
+        self.target_pos()
 
         self.move(dt)
         self.animate(dt)
