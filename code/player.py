@@ -23,7 +23,9 @@ class Player(pygame.sprite.Sprite):
         #timers
         self.timers = {
             'tool use' : Timer(350, self.tool_use),
-            'tool_switch' : Timer(200)
+            'tool_switch' : Timer(200),
+            'seed use' : Timer(350, self.seed_use),
+            'seed_switch' : Timer(200)
         }
 
         #tool use
@@ -31,9 +33,20 @@ class Player(pygame.sprite.Sprite):
         self.tool_index = 0
         self.selected_tool = self.tools[self.tool_index]
 
+        #seed use
+        self.seeds = ['corn', 'tomato']
+        self.seed_index = 0
+        self.selected_seed = self.seeds[self.seed_index]
+
+    
+    def seed_use(self):
+        #self.timers['seed use'].activate()
+        print(self.selected_seed)
+    
     def tool_use(self):
         #self.timers['tool use'].activate()
         print(self.selected_tool)
+
 
 
     def import_assets(self):
@@ -76,19 +89,32 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.direction.x = 0
 
-            # tool use on key press (edge), not while holding
+            # tool use
             if keys[pygame.K_SPACE]:
                 self.timers['tool use'].activate()
                 self.direction = pygame.math.Vector2()
                 self.frame_index = 0
 
-            #switch tools
+            #tools switch
             if keys[pygame.K_1] and not self.timers['tool_switch'].active:
                 self.timers['tool_switch'].activate()
                 self.tool_index += 1
                 self.tool_index = self.tool_index if self.tool_index < len(self.tools) else 0
                 self.selected_tool = self.tools[self.tool_index]
                 
+            #seed use 
+            if keys[pygame.K_LCTRL]:
+                self.timers['seed use'].activate()
+                self.direction = pygame.math.Vector2()
+                self.frame_index = 0
+
+            #seed switch
+            if keys[pygame.K_2] and not self.timers['tool_switch'].active:
+                self.timers['tool_switch'].activate()
+                self.seed_index += 1
+                self.seed_index = self.seed_index if self.seed_index < len(self.seeds) else 0
+                self.selected_seed = self.seeds[self.seed_index]
+            
 
 
 
