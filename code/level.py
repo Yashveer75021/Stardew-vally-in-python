@@ -2,9 +2,11 @@ import pygame
 from setting import *
 from player import Player
 from overlay import Overlay 
-from sprites import Generic, Water, Wildflower, Tree
+from sprites import Generic, Water, Wildflower, Tree, Interaction
 from pytmx.util_pygame import load_pygame
 from support import *
+from transition import Transition
+from soil import SoilLayer
 
 class Level:
     def __init__(self):
@@ -16,9 +18,14 @@ class Level:
         self.all_sprites = CameraGroup()
         self.collision_sprites = pygame.sprite.Group()
         self.tree_sprites = pygame.sprite.Group()  
+        self.intraction_sprites = pygame.sprite.Group() 
 
+        self.soil_layer = SoilLayer(self.all_sprites)
         self.setup()
         self.overlay = Overlay(self.player)
+        self.transition = Transition(self.reset, self.player)
+        
+
 
     def setup(self):
         tmx_data = load_pygame('data/map.tmx')
@@ -64,7 +71,8 @@ class Level:
             Tree(
                 pos = (obj.x, obj.y),
                 surf = obj.image,
-                group = [self.all_sprites, self.collision_sprites, self.tree_sprites]
+                group = [self.all_sprites, self.collision_sprites, self.tree_sprites],
+                player_add = self.player_add 
             )
 
         #import the wildfowers
@@ -90,8 +98,17 @@ class Level:
                     pos = (obj.x, obj.y),
                     groups = self.all_sprites,
                     collision_sprites = self.collision_sprites,
-                    tree_stripes = self.tree_sprites
+                    tree_stripes = self.tree_sprites,
+                    interaction_sprites = self.intraction_sprites,
+                    soil_layer = self.soil_layer
                 )
+            if obj.name == 'Bed':
+                Interaction(
+                    pos = (obj.x, obj.y),
+                    size = (obj.width, obj.height),
+                    group = self.intraction_sprites,
+                    name = 'Bed'
+                ) 
 
         Generic(
             pos = (0,0),
@@ -100,13 +117,26 @@ class Level:
             z = LAYERS['ground']
         )
 
+    def player_add(self,item):
+        self.player.item_inventory[item] += 1
+
     def run(self, dt):
         self.display_surface.fill('black') 
         self.all_sprites.custom_draw(self.player)
         self.all_sprites.update(dt)
 
         self.overlay.display()
+        if self.player.sleep:
+            self.transition.fade()
 
+    def reset(self):
+        #apple on tree
+        for tree in self.tree_sprites.sprites():
+            for apple in tree.apple_sprites.sprites():
+                apple.kill()
+            if tree.alive:
+                tree.create_fruit()
+        
 
 class CameraGroup(pygame.sprite.Group):
     def __init__(self):
@@ -126,10 +156,10 @@ class CameraGroup(pygame.sprite.Group):
                     self.display_surface.blit(sprite.image, offset_rect)
 
                     #analics
-                    if sprite == player:
-                        pygame.draw.rect(self.display_surface, 'red', offset_rect, 5)
-                        hitbox_offset = sprite.hitbox.copy()
-                        hitbox_offset.center = offset_rect.center 
-                        pygame.draw.rect(self.display_surface, 'green', hitbox_offset, 5)
-                        taget_pos = offset_rect.center + PLAYER_TOOL_OFFEST[player.status.split('_')[0]]
-                        pygame.draw.circle(self.display_surface, 'blue', taget_pos, 5)
+                    # if sprite == player:
+                    #     pygame.draw.rect(self.display_surface, 'red', offset_rect, 5)
+                    #     hitbox_offset = sprite.hitbox.copy()
+                    #     hitbox_offset.center = offset_rect.center 
+                    #     pygame.draw.rect(self.display_surface, 'green', hitbox_offset, 5)
+                    #     taget_pos = offset_rect.center + PLAYER_TOOL_OFFEST[player.status.split('_')[0]]
+                    #     pygame.draw.circle(self.display_surface, 'blue', taget_pos, 5)

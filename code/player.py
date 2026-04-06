@@ -4,7 +4,7 @@ from support import *
 from my_timer import Timer
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites, tree_stripes):
+    def __init__(self, pos, groups, collision_sprites, tree_stripes, interaction_sprites, soil_layer):
         super().__init__(groups)
         
         self.import_assets()
@@ -43,11 +43,22 @@ class Player(pygame.sprite.Sprite):
         self.seed_index = 0
         self.selected_seed = self.seeds[self.seed_index]
 
+        #inventory
+        self.item_inventory = {
+            'wood' : 0,
+            'apple' : 0,   
+            'corn' : 0,
+            'tomato' : 0
+        }
+
         #intrasction
         self.tree_stripes = tree_stripes
+        self.intraction_sprites = interaction_sprites
+        self.sleep = False
+        self.soil_layer = soil_layer
 
-    def target_pos(self):
-        self.get_target_pos = self.rect.center + PLAYER_TOOL_OFFEST[self.status.split('_')[0]]
+    def get_target_pos(self):
+        self.target_pos = self.rect.center + PLAYER_TOOL_OFFEST[self.status.split('_')[0]]
     
     def seed_use(self):
         #self.timers['seed use'].activate()
@@ -55,12 +66,12 @@ class Player(pygame.sprite.Sprite):
     
     def tool_use(self):
         #self.timers['tool use'].activate()
+        if self.selected_tool == 'hoe':
+            self.soil_layer.get_hit(self.target_pos)
         if self.selected_tool == 'axe':
-            pass
-        if self.selected_tool == 'axe':
-            for tree in self.tree_stripes():
-                if tree.rect.colliderect(self.hitbox):
-                    tree.kill()
+            for tree in self.tree_stripes.sprites():
+                if tree.rect.collidepoint(self.target_pos):
+                    tree.damage()
         if self.selected_tool == 'axe':
             pass
             
@@ -86,7 +97,7 @@ class Player(pygame.sprite.Sprite):
 
     def input(self):
         keys = pygame.key.get_pressed()
-        if not self.timers['tool use'].active:
+        if not self.timers['tool use'].active and not self.sleep:
             if keys[pygame.K_w]:
                 self.direction.y = -1
                 self.status = 'up'
@@ -130,7 +141,16 @@ class Player(pygame.sprite.Sprite):
                 self.seed_index += 1
                 self.seed_index = self.seed_index if self.seed_index < len(self.seeds) else 0
                 self.selected_seed = self.seeds[self.seed_index]    
-            
+            #interaction
+            if keys[pygame.K_RETURN]:
+                collided_intraction_sprites= pygame.sprite.spritecollide(self, self.intraction_sprites, False)
+                if collided_intraction_sprites:
+                    if collided_intraction_sprites[0].name == 'Bed':
+                        self.status = 'left_idle'
+                        self.sleep = True
+                    elif collided_intraction_sprites[0].name == 'trader':
+                        pass
+
 
     def update_timers(self):
         for ti in self.timers.values():
@@ -186,7 +206,7 @@ class Player(pygame.sprite.Sprite):
         self.input()
         self.update_timers()
         self.status_update()
-        self.target_pos()
+        self.get_target_pos()
 
         self.move(dt)
         self.animate(dt)

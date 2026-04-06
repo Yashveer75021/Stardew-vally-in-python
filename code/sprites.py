@@ -11,6 +11,12 @@ class Generic(pygame.sprite.Sprite):
         self.z = z
         self.hitbox = self.rect.copy().inflate(-self.rect.width * 0.2, -self.rect.height * 0.75)
 
+class Interaction(Generic):
+    def __init__(self, pos, size, group, name ):
+        surf = pygame.Surface(size)
+        surf.fill('red')
+        super().__init__(pos, surf, group)
+        self.name = name
     
 class Water(Generic):
     def __init__(self, pos, frames, group):
@@ -38,8 +44,25 @@ class Wildflower(Generic):
         super().__init__(pos, surf , group, z)
         self.hitbox = self.rect.copy().inflate(-20, -self.rect.height * 0.9)
 
+class Particle(Generic):
+    def __init__(self, pos, surf, group, z, duration = 200):
+        super().__init__(pos, surf, group, z)
+        self.duration = duration
+        self.start_timer = pygame.time.get_ticks()
+
+        #white surface for the white particles
+        mask_surf = pygame.mask.from_surface(self.image)
+        white_surf = mask_surf.to_surface()
+        white_surf.set_colorkey((0,0,0))
+        self.image = white_surf    
+    
+    def update(self, dt):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.start_timer >= self.duration:
+            self.kill()
+
 class Tree(Generic):
-    def __init__(self, pos, surf, group, z = LAYERS['main'],name = 'Small'):
+    def __init__(self, pos, surf, group, z = LAYERS['main'],name = 'Small', player_add = None):
         super().__init__(pos, surf, group, z)
         #self.hitbox = self.rect.copy().inflate(-20, -self.rect.height * 0.9)
 
@@ -57,14 +80,45 @@ class Tree(Generic):
         self.apple_sprites = pygame.sprite.Group()
         self.create_fruit()
 
+        self.player_add = player_add
+
     def damage(self):
         self.tree_health -= 1
 
         #remove the apple
         if len(self.apple_sprites.sprites()) > 0:
             random_apple = choice(self.apple_sprites.sprites())
+            Particle(
+                pos = random_apple.rect.topleft,
+                surf = random_apple.image,
+                group = self.groups()[0],
+                z = LAYERS['fruit'])
+    
+            if self.player_add:
+                self.player_add('apple')
             random_apple.kill()
+        
 
+    def cheak_death(self):
+        if self.tree_health <= 0:
+            Particle(
+                pos = self.rect.topleft,
+                surf = self.image,
+                group = self.groups()[0],
+                z = LAYERS['fruit'],
+                duration = 200
+            )
+            self.image = self.stump_surf
+            self.rect = self.image.get_rect(midbottom = self.rect.midbottom)
+            self.hitbox = self.rect.copy().inflate(-10, -self.rect.height * 0.6)
+            self.alive = False
+            if self.player_add:
+                self.player_add('wood')
+
+    def update(self, dt):
+        if self.alive:
+            self.cheak_death()
+        
     def create_fruit(self):
         for pos in self.apple_pos:
             if randint(0,10) < 2:
