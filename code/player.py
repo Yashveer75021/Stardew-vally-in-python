@@ -61,8 +61,7 @@ class Player(pygame.sprite.Sprite):
         self.target_pos = self.rect.center + PLAYER_TOOL_OFFEST[self.status.split('_')[0]]
     
     def seed_use(self):
-        #self.timers['seed use'].activate()
-        pass
+        self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
     
     def tool_use(self):
         #self.timers['tool use'].activate()
@@ -74,8 +73,7 @@ class Player(pygame.sprite.Sprite):
                     tree.damage()
         if self.selected_tool == 'water':
             self.soil_layer.water(self.target_pos)
-            
-
+                 
     def import_assets(self):
         self.animation = {
             'up' : [],'down' : [],'left' : [],'right' : [],
@@ -150,7 +148,6 @@ class Player(pygame.sprite.Sprite):
                         self.sleep = True
                     elif collided_intraction_sprites[0].name == 'trader':
                         pass
-
 
     def update_timers(self):
         for ti in self.timers.values():

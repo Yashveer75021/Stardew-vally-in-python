@@ -12,18 +12,56 @@ class SoilTiles(pygame.sprite.Sprite):
         self.z = LAYERS["soil"]
 
 class WaterTile(pygame.sprite.Sprite):
-    def __init__(self,pos,surf,groups):
+    def __init__(self,pos,surf,groups, z = LAYERS["soil water"]):
         super().__init__(groups)
         self.image = surf
         self.rect = self.image.get_rect(topleft = pos)
-        self.z = LAYERS["soil water"]
+        self.z = z
+
+class Plant(pygame.sprite.Sprite,):
+    def __init__(self,plant_type, groups, soil, cheak_waterd, z = LAYERS['ground plant']):
+        super().__init__(groups)
+        self.plant_type = plant_type
+        self.soil = soil
+        self.cheak_waterd = cheak_waterd
+        self.z = z
+        
+        #plant graphic
+        self.frames = import_folder(f"graphics/fruit/{plant_type}")
+        
+        #plant growing
+        self.age = 0
+        self.max_age = len(self.frames) - 1 
+        self.grow_speed = GROWTH_SPEED[plant_type]
+        self.harvested = False 
+        
+        # sprite group 
+        self.image = self.frames[self.age]
+        self.y_offset = -16 if plant_type == 'corn' else -8
+        self.rect = self.image.get_rect(midbottom = soil.rect.midbottom + pygame.math.Vector2(0,self.y_offset))
+
+    def grow(self):
+        if self.cheak_waterd(self.rect.center):
+            self.age += self.grow_speed
+            if int(self.age) > 0:
+                self.hitbox = self.rect.copy().inflate(-26, -self.rect.height* 0.4)
+                self.z = LAYERS['main']
+            if self.age >= self.max_age:
+                self.age = self.max_age
+                self.harvested = True    
+
+            
+            self.image = self.frames[int(self.age)] 
+            self.rect = self.image.get_rect(midbottom = self.soil.rect.midbottom + pygame.math.Vector2(0,self.y_offset))
 
 class SoilLayer():
-    def __init__(self,all_sprites):
+    def __init__(self,all_sprites, collision_sprites):
         #sprite groups 
         self.all_sprites = all_sprites
         self.soil_sprites = pygame.sprite.Group()
         self.water_sprites = pygame.sprite.Group()  
+        self.plant_sprites = pygame.sprite.Group()
+        self.collision_sprites = collision_sprites
 
         #graphic
         self.soil_surf = pygame.image.load("graphics/soil/o.png")
@@ -72,7 +110,8 @@ class SoilLayer():
                 WaterTile(
                     pos = (x * TILE_SIZE, y * TILE_SIZE),
                     surf = choice(self.water_surf),
-                    groups = [self.all_sprites, self.water_sprites]
+                    groups = [self.all_sprites, self.water_sprites],
+                    z = LAYERS["soil water"]
                 )   
     
     def water_all(self):
@@ -84,7 +123,8 @@ class SoilLayer():
                     WaterTile(
                         pos = (index_col * TILE_SIZE, index_row * TILE_SIZE),
                         surf = choice(self.water_surf),
-                        groups = [self.all_sprites, self.water_sprites]
+                        groups = [self.all_sprites, self.water_sprites],
+                        z = LAYERS['soil water']
                     )   
 
     def remove_water(self):
@@ -95,6 +135,33 @@ class SoilLayer():
                 if 'W' in cell:
                     cell.remove('W')
  
+    def cheak_waterd(self,pos):
+        x = pos[0] // TILE_SIZE
+        y = pos[1] // TILE_SIZE
+        cell = self.soil_grid[y][x]
+        if 'W' in cell:
+            return True
+        return False
+
+    def plant_seed(self,target_pos, seed):
+        for soil_sprite in self.soil_sprites:
+            if soil_sprite.rect.collidepoint(target_pos):
+                x = soil_sprite.rect.x // TILE_SIZE
+                y = soil_sprite.rect.y // TILE_SIZE
+                if 'P' not in self.soil_grid[y][x]:
+                    self.soil_grid[y][x].append('P')
+                    Plant(
+                        plant_type = seed,
+                        groups = [self.all_sprites, self.plant_sprites, self.collision_sprites],
+                        soil = soil_sprite,
+                        cheak_waterd = self.cheak_waterd,
+                        z = LAYERS['ground plant']
+                    )
+                
+    def update_plant(self):
+        for plant in self.plant_sprites.sprites():
+            plant.grow()
+
     def crate_soil_tiles(self):
         self.soil_sprites.empty()
         for index_row, row in enumerate(self.soil_grid):

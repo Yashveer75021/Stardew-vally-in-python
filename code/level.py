@@ -22,7 +22,7 @@ class Level:
         self.tree_sprites = pygame.sprite.Group()  
         self.intraction_sprites = pygame.sprite.Group() 
 
-        self.soil_layer = SoilLayer(self.all_sprites)
+        self.soil_layer = SoilLayer(self.all_sprites, self.collision_sprites)
         self.setup()
         self.overlay = Overlay(self.player)
         self.transition = Transition(self.reset, self.player)
@@ -140,6 +140,9 @@ class Level:
             self.transition.fade()
 
     def reset(self):
+        #plant
+        self.soil_layer.update_plant()
+
         #apple on tree
         for tree in self.tree_sprites.sprites():
             for apple in tree.apple_sprites.sprites():
