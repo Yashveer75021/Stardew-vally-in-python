@@ -7,6 +7,8 @@ from pytmx.util_pygame import load_pygame
 from support import *
 from transition import Transition
 from soil import SoilLayer
+from sky import Rain
+from random import randint
 
 class Level:
     def __init__(self):
@@ -25,6 +27,10 @@ class Level:
         self.overlay = Overlay(self.player)
         self.transition = Transition(self.reset, self.player)
         
+        #sky 
+        self.rain = Rain(self.all_sprites)
+        self.raining = randint(0,10) > 7 
+        self.soil_layer.raining = self.raining  
 
 
     def setup(self):
@@ -125,6 +131,10 @@ class Level:
         self.all_sprites.custom_draw(self.player)
         self.all_sprites.update(dt)
 
+        #rain 
+        if self.raining:
+            self.rain.update()
+
         self.overlay.display()
         if self.player.sleep:
             self.transition.fade()
@@ -136,6 +146,13 @@ class Level:
                 apple.kill()
             if tree.alive:
                 tree.create_fruit()
+        
+        #remove water
+        self.soil_layer.remove_water() 
+        self.raining = randint(0,10) > 7 
+        self.soil_layer.raining = self.raining
+        if self.raining:
+            self.soil_layer.water_all()
         
 
 class CameraGroup(pygame.sprite.Group):
