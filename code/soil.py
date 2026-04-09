@@ -33,7 +33,7 @@ class Plant(pygame.sprite.Sprite,):
         self.age = 0
         self.max_age = len(self.frames) - 1 
         self.grow_speed = GROWTH_SPEED[plant_type]
-        self.harvested = False 
+        self.harvesteble = False 
         
         # sprite group 
         self.image = self.frames[self.age]
@@ -48,7 +48,7 @@ class Plant(pygame.sprite.Sprite,):
                 self.z = LAYERS['main']
             if self.age >= self.max_age:
                 self.age = self.max_age
-                self.harvested = True    
+                self.harvesteble = True    
 
             
             self.image = self.frames[int(self.age)] 

@@ -2,7 +2,7 @@ import pygame
 from setting import *
 from player import Player
 from overlay import Overlay 
-from sprites import Generic, Water, Wildflower, Tree, Interaction
+from sprites import Generic, Water, Wildflower, Tree, Interaction, Particle
 from pytmx.util_pygame import load_pygame
 from support import *
 from transition import Transition
@@ -31,7 +31,6 @@ class Level:
         self.rain = Rain(self.all_sprites)
         self.raining = randint(0,10) > 7 
         self.soil_layer.raining = self.raining  
-
 
     def setup(self):
         tmx_data = load_pygame('data/map.tmx')
@@ -139,6 +138,9 @@ class Level:
         if self.player.sleep:
             self.transition.fade()
 
+        #plant colliosion
+        self.plant_collosion()
+
     def reset(self):
         #plant
         self.soil_layer.update_plant()
@@ -157,6 +159,20 @@ class Level:
         if self.raining:
             self.soil_layer.water_all()
         
+    def plant_collosion(self):
+        if self.soil_layer.plant_sprites:
+            for plant in self.soil_layer.plant_sprites:
+                if plant.harvesteble and plant.rect.colliderect(self.player.hitbox):
+                    self.player.item_inventory[plant.plant_type] += 1
+                    plant.kill()
+                    Particle(
+                        pos = plant.rect.topleft,
+                        surf = plant.image,
+                        groups = self.all_sprites,
+                        z = LAYERS['main']
+                    )
+                    self.soil_layer.soil_grid[plant.rect.centery // TILE_SIZE][plant.rect.centerx // TILE_SIZE].remove('P')
+                    
 
 class CameraGroup(pygame.sprite.Group):
     def __init__(self):
@@ -183,3 +199,4 @@ class CameraGroup(pygame.sprite.Group):
                     #     pygame.draw.rect(self.display_surface, 'green', hitbox_offset, 5)
                     #     taget_pos = offset_rect.center + PLAYER_TOOL_OFFEST[player.status.split('_')[0]]
                     #     pygame.draw.circle(self.display_surface, 'blue', taget_pos, 5)
+ 
