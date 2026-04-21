@@ -9,6 +9,7 @@ from transition import Transition
 from soil import SoilLayer
 from sky import Rain, Sky
 from random import randint
+from menu import Menu
 
 class Level:
     def __init__(self):
@@ -32,6 +33,10 @@ class Level:
         self.raining = randint(0,10) > 7 
         self.soil_layer.raining = self.raining  
         self.sky = Sky()
+
+        #shop 
+        self.shop_active = False
+        self.menu = Menu(self.player, self.toggle_shop)
 
     def setup(self):
         tmx_data = load_pygame('data/map.tmx')
@@ -106,7 +111,8 @@ class Level:
                     collision_sprites = self.collision_sprites,
                     tree_stripes = self.tree_sprites,
                     interaction_sprites = self.intraction_sprites,
-                    soil_layer = self.soil_layer
+                    soil_layer = self.soil_layer,
+                    toggle_shop = self.toggle_shop
                 )
             if obj.name == 'Bed':
                 Interaction(
@@ -115,6 +121,14 @@ class Level:
                     group = self.intraction_sprites,
                     name = 'Bed'
                 ) 
+
+            if obj.name == 'Trader':
+                Interaction(
+                    pos = (obj.x, obj.y),
+                    size = (obj.width, obj.height),
+                    group = self.intraction_sprites,
+                    name = 'Trader'
+                )
 
         Generic(
             pos = (0,0),
@@ -126,24 +140,31 @@ class Level:
     def player_add(self,item):
         self.player.item_inventory[item] += 1
 
+    def toggle_shop(self):
+        self.shop_active = not self.shop_active
+
     def run(self, dt):
+
+        #dewing logic
         self.display_surface.fill('black') 
         self.all_sprites.custom_draw(self.player)
-        self.all_sprites.update(dt)
+        
+        #update 
+        if self.shop_active:
+            self.menu.update()
+        else:
+            self.all_sprites.update(dt)
+            self.plant_collosion()
 
-        #rain 
-        if self.raining:
+        #weather
+        self.overlay.display()
+        if self.raining and not self.shop_active:
             self.rain.update()
-
-        #sky 
         self.sky.display(dt)
 
-        self.overlay.display()
         if self.player.sleep:
             self.transition.fade()
-
-        #plant colliosion
-        self.plant_collosion()
+        
 
     def reset(self):
         #plant
@@ -164,8 +185,7 @@ class Level:
             self.soil_layer.water_all()
 
         #sky 
-        self.sky.start_color = self.sky.end_color.copy()
-        
+        self.sky.start_color = [255, 255, 255]
         
     def plant_collosion(self):
         if self.soil_layer.plant_sprites:

@@ -4,7 +4,7 @@ from support import *
 from my_timer import Timer
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites, tree_stripes, interaction_sprites, soil_layer):
+    def __init__(self, pos, groups, collision_sprites, tree_stripes, interaction_sprites, soil_layer, toggle_shop):
         super().__init__(groups)
         
         self.import_assets()
@@ -50,18 +50,28 @@ class Player(pygame.sprite.Sprite):
             'corn' : 0,
             'tomato' : 0
         }
+        
+        self.seed_inventory = {
+            'corn_seed' : 5,
+            'tomato_seed' : 5
+        }
+
+        self.money = 0
 
         #intrasction
         self.tree_stripes = tree_stripes
         self.intraction_sprites = interaction_sprites
         self.sleep = False
         self.soil_layer = soil_layer
+        self.toggle_shop = toggle_shop
 
     def get_target_pos(self):
         self.target_pos = self.rect.center + PLAYER_TOOL_OFFEST[self.status.split('_')[0]]
     
     def seed_use(self):
-        self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
+        if self.seed_inventory[self.selected_seed + '_seed'] > 0:
+            self.seed_inventory[self.selected_seed + '_seed'] -= 1
+            self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
     
     def tool_use(self):
         #self.timers['tool use'].activate()
@@ -141,12 +151,13 @@ class Player(pygame.sprite.Sprite):
                 self.selected_seed = self.seeds[self.seed_index]    
             #interaction
             if keys[pygame.K_RETURN]:
+                self.toggle_shop()
                 collided_intraction_sprites= pygame.sprite.spritecollide(self, self.intraction_sprites, False)
                 if collided_intraction_sprites:
                     if collided_intraction_sprites[0].name == 'Bed':
                         self.status = 'left_idle'
                         self.sleep = True
-                    elif collided_intraction_sprites[0].name == 'trader':
+                    elif collided_intraction_sprites[0].name == 'Trader':
                         pass
 
     def update_timers(self):

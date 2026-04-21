@@ -14,7 +14,7 @@ class Sky:
     def display(self,dt):
         for index, value in enumerate(self.end_color):
             if self.start_color[index] > value:
-                self.start_color[index] -= 10 * dt
+                self.start_color[index] -= 2 * dt
                 self.start_color[index] = max(self.start_color[index], value)
 
             #color transition
