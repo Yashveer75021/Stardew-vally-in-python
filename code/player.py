@@ -63,7 +63,11 @@ class Player(pygame.sprite.Sprite):
         self.intraction_sprites = interaction_sprites
         self.sleep = False
         self.soil_layer = soil_layer
-        self.toggle_shop = toggle_shop
+        self.toggle_shop = toggle_shop\
+
+        #sound 
+        self.water_sound = pygame.mixer.Sound('audio/water.mp3')
+        self.water_sound.set_volume(0.2)
 
     def get_target_pos(self):
         self.target_pos = self.rect.center + PLAYER_TOOL_OFFEST[self.status.split('_')[0]]
@@ -83,6 +87,7 @@ class Player(pygame.sprite.Sprite):
                     tree.damage()
         if self.selected_tool == 'water':
             self.soil_layer.water(self.target_pos)
+            self.water_sound.play()
                  
     def import_assets(self):
         self.animation = {

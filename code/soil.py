@@ -67,7 +67,10 @@ class SoilLayer():
         self.soil_surf = pygame.image.load("graphics/soil/o.png")
         self.soil_surfs = import_folder_dict("graphics/soil")
         self.water_surf = import_folder("graphics/soil_water")
-        
+
+        #sound 
+        self.hoe_sound = pygame.mixer.Sound('audio/hoe.wav')
+        self.hoe_sound.set_volume(0.2)
 
         self.crate_soil_grid()
         self.crate_hit_rects()
@@ -92,6 +95,7 @@ class SoilLayer():
     def get_hit(self,point):
         for rect in self.hit_rects:
             if rect.collidepoint(point):
+                self.hoe_sound.play()   
                 x = rect.x // TILE_SIZE
                 y = rect.y // TILE_SIZE
                 if "F" in self.soil_grid[y][x]:
